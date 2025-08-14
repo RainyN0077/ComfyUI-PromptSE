@@ -145,10 +145,12 @@ app.registerExtension({
                     // Create main container with flat styling and proper sizing
                     const container = createEl("div", "promptse-container");
                     container.style.cssText = `
+                        position: relative;
+                        top: -25px;
                         width: 100%;
-                        height: 100%;
-                        min-height: 350px;
-                        padding: 12px;
+                        height: calc(100% + 25px);
+                        min-height: 250px;
+                        padding: 6px;
                         background: #2b2b2b;
                         border: 1px solid #444;
                         border-radius: 4px;
@@ -165,15 +167,15 @@ app.registerExtension({
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        margin-bottom: 12px;
-                        padding-bottom: 8px;
+                        margin-bottom: 6px;
+                        padding-bottom: 4px;
                         border-bottom: 1px solid #444;
                     `;
                     
                     const title = createEl("span", "", this.getText("title"));
                     title.style.cssText = `
                         font-weight: 500;
-                        font-size: 14px;
+                        font-size: 12px;
                         color: #cccccc;
                     `;
                     
@@ -224,13 +226,13 @@ app.registerExtension({
                     // Create entries list with adaptive height
                     const entriesList = createEl("div", "promptse-entries");
                     entriesList.style.cssText = `
-                        margin-bottom: 12px;
+                        margin-bottom: 6px;
                         flex: 1;
-                        min-height: 120px;
+                        min-height: 100px;
                         overflow-y: auto;
                         border: 1px solid #444;
                         border-radius: 2px;
-                        padding: 6px;
+                        padding: 4px;
                         background: #333;
                     `;
                     
@@ -1482,8 +1484,8 @@ app.registerExtension({
                     // Create output preview
                     const outputSection = createEl("div", "promptse-output");
                     outputSection.style.cssText = `
-                        margin-bottom: 12px;
-                        padding: 8px;
+                        margin-bottom: 6px;
+                        padding: 6px;
                         background: #2a2a2a;
                         border: 1px solid #444;
                         border-radius: 2px;
@@ -1639,8 +1641,6 @@ app.registerExtension({
                     container.appendChild(entriesList);
                     container.appendChild(outputSection);
                     container.appendChild(controls);
-                    container.appendChild(entriesList);
-                    container.appendChild(controls);
                     
                     // Clear any existing widgets with the same name
                     if (this.widgets) {
@@ -1654,13 +1654,13 @@ app.registerExtension({
                     });
                     
                     // Set minimum node size
-                    this.size = [Math.max(this.size[0] || 0, 320), Math.max(this.size[1] || 0, 350)];
+                    this.size = [Math.max(this.size[0] || 0, 300), Math.max(this.size[1] || 0, 250)];
                     
                     // Override onResize to maintain minimum size
                     const origOnResize = this.onResize;
                     this.onResize = function(size) {
-                        size[0] = Math.max(size[0], 320);
-                        size[1] = Math.max(size[1], 350);
+                        size[0] = Math.max(size[0], 300);
+                        size[1] = Math.max(size[1], 250);
                         this.size = size;
                         if (origOnResize) {
                             origOnResize.call(this, size);
