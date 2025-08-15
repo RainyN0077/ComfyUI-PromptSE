@@ -29,92 +29,190 @@ app.registerExtension({
                     console.log("PromptSE: Node created, initializing UI");
                     this.promptse_initialized = true;
                     
-                    // Initialize node data with weight support
-                    this.promptse_data = {
-                        entries: [
-                            { id: "entry1", title: "Character", content: "beautiful girl, long hair", enabled: true, weight: 1.0 },
-                            { id: "entry2", title: "Style", content: "anime style, high quality", enabled: true, weight: 1.2 },
-                            { id: "entry3", title: "Details", content: "detailed, masterpiece", enabled: false, weight: 1.0 }
-                        ],
-                        settings: {
-                            connector: ", ",
-                            mode: "M",
-                            weightFormat: "parentheses" // parentheses, brackets, none
-                        },
-                        lexicon: []
-                    };
+                    // Initialize node data only if it doesn't exist (preserve saved data)
+                    if (!this.promptse_data) {
+                        this.promptse_data = {
+                            entries: [
+                                { id: "entry1", title: "角色", content: "beautiful girl, long hair", enabled: true, weight: 1.0 },
+                                { id: "entry2", title: "风格", content: "anime style, high quality", enabled: true, weight: 1.2 },
+                                { id: "entry3", title: "细节", content: "detailed, masterpiece", enabled: false, weight: 1.0 }
+                            ],
+                            settings: {
+                                connector: ", ",
+                                mode: "M",
+                                weightFormat: "parentheses",
+                                showOutputPreview: false, // Default to hidden
+                                language: "zh" // Default language
+                            },
+                            lexicon: []
+                        };
+                    } else {
+                        // Ensure all settings exist in loaded data
+                        if (!this.promptse_data.settings) {
+                            this.promptse_data.settings = {};
+                        }
+                        if (!this.promptse_data.settings.hasOwnProperty('connector')) {
+                            this.promptse_data.settings.connector = ", ";
+                        }
+                        if (!this.promptse_data.settings.hasOwnProperty('mode')) {
+                            this.promptse_data.settings.mode = "M";
+                        }
+                        if (!this.promptse_data.settings.hasOwnProperty('weightFormat')) {
+                            this.promptse_data.settings.weightFormat = "parentheses";
+                        }
+                        if (!this.promptse_data.settings.hasOwnProperty('showOutputPreview')) {
+                            this.promptse_data.settings.showOutputPreview = false;
+                        }
+                        if (!this.promptse_data.settings.hasOwnProperty('language')) {
+                            this.promptse_data.settings.language = "zh";
+                        }
+                        if (!this.promptse_data.lexicon) {
+                            this.promptse_data.lexicon = [];
+                        }
+                    }
                     
-                    // Language system
-                    this.language = "zh"; // zh or en
+                    // Language system with complete Chinese localization
+                    // Always use the saved language setting
+                    this.language = this.promptse_data.settings.language || "zh";
                     this.texts = {
                         zh: {
-                            title: "PromptSE",
+                            // 基础文本
+                            title: "提示词编辑器",
+                            
+                            // 模式相关 - 更直观的描述
+                            multiMode: "多选模式",
+                            singleMode: "单选模式",
+                            modeTooltip: "多选：组合多个条目 | 单选：仅使用一个条目",
+                            
+                            // 按钮和操作
                             import: "导入词库",
                             settings: "设置",
-                            editEntry: "编辑条目",
-                            lexicon: "词库",
-                            searchTags: "搜索标签...",
-                            noResults: "未找到匹配标签",
-                            noLexicon: "未加载词库",
-                            english: "英文",
-                            chinese: "中文",
-                            title_label: "标题:",
-                            content_label: "内容:",
-                            weight_label: "权重:",
+                            add: "添加",
+                            remove: "删除",
                             save: "保存",
                             cancel: "取消",
-                            mode: "模式",
-                            add: "添加",
-                            remove: "移除",
-                            output: "输出:",
-                            connector: "连接符:",
-                            comma: "逗号",
-                            newLine: "换行",
-                            pipe: "管道",
+                            apply: "应用",
+                            
+                            // 设置面板
+                            settingsTitle: "设置面板",
+                            connector: "连接符",
+                            comma: "逗号 (,)",
+                            newLine: "换行符",
+                            pipe: "管道符 (|)",
                             space: "空格",
-                            weightFormat: "权重格式:",
-                            noFormat: "无格式",
-                            dataManagement: "数据管理:",
+                            customConnector: "自定义连接符",
+                            
+                            // 权重格式
+                            weightFormat: "权重格式",
+                            parentheses: "圆括号 (text:1.2)",
+                            brackets: "方括号 [text:1.2]",
+                            noFormat: "不使用权重",
+                            
+                            // 显示选项
+                            displayOptions: "显示选项",
+                            showOutputPreview: "显示输出预览",
+                            
+                            // 数据管理
+                            dataManagement: "数据管理",
                             exportConfig: "导出配置",
-                            resetDefault: "重置默认",
-                            language: "语言:",
-                            resetConfirm: "重置所有设置为默认值？此操作无法撤销。",
+                            importConfig: "导入配置",
+                            resetDefault: "重置为默认",
+                            resetConfirm: "确定要重置所有设置吗？此操作不可撤销。",
+                            
+                            // 语言设置
+                            language: "界面语言",
+                            chinese: "简体中文",
+                            english: "English",
+                            
+                            // 条目编辑
+                            editEntry: "编辑条目",
+                            title_label: "标题：",
+                            content_label: "内容：",
+                            weight_label: "权重：",
+                            dragToReorder: "拖动排序",
+                            
+                            // 词库
+                            lexicon: "词库",
+                            searchTags: "搜索标签...",
+                            addTag: "添加标签",
+                            noLexicon: "暂无词库",
+                            noResults: "未找到匹配项",
+                            
+                            // 输出预览
+                            output: "输出预览：",
+                            
+                            // 成功/错误消息
                             importSuccess: "成功导入 {count} 个词库条目！",
                             entryExists: "此条目已存在！",
                             parseError: "解析词库文件出错，请检查格式。"
                         },
                         en: {
+                            // Basic text
                             title: "PromptSE",
+                            
+                            // Mode related
+                            multiMode: "Multi Mode",
+                            singleMode: "Single Mode",
+                            modeTooltip: "Multi: Combine multiple entries | Single: Use only one entry",
+                            
+                            // Buttons and actions
                             import: "Import Lexicon",
                             settings: "Settings",
-                            editEntry: "Edit Entry",
-                            lexicon: "Lexicon",
-                            searchTags: "Search tags...",
-                            noResults: "No matching tags found",
-                            noLexicon: "No lexicon loaded",
-                            english: "English",
+                            add: "Add",
+                            remove: "Remove",
+                            save: "Save",
+                            cancel: "Cancel",
+                            apply: "Apply",
+                            
+                            // Settings panel
+                            settingsTitle: "Settings",
+                            connector: "Connector",
+                            comma: "Comma (,)",
+                            newLine: "New Line",
+                            pipe: "Pipe (|)",
+                            space: "Space",
+                            customConnector: "Custom Connector",
+                            
+                            // Weight format
+                            weightFormat: "Weight Format",
+                            parentheses: "Parentheses (text:1.2)",
+                            brackets: "Brackets [text:1.2]",
+                            noFormat: "No Weight",
+                            
+                            // Display options
+                            displayOptions: "Display Options",
+                            showOutputPreview: "Show Output Preview",
+                            
+                            // Data management
+                            dataManagement: "Data Management",
+                            exportConfig: "Export Config",
+                            importConfig: "Import Config",
+                            resetDefault: "Reset to Default",
+                            resetConfirm: "Reset all settings to default? This cannot be undone.",
+                            
+                            // Language settings
+                            language: "Language",
                             chinese: "Chinese",
+                            english: "English",
+                            
+                            // Entry editing
+                            editEntry: "Edit Entry",
                             title_label: "Title:",
                             content_label: "Content:",
                             weight_label: "Weight:",
-                            save: "Save",
-                            cancel: "Cancel",
-                            mode: "Mode",
-                            add: "Add",
-                            remove: "Remove",
+                            dragToReorder: "Drag to reorder",
+                            
+                            // Lexicon
+                            lexicon: "Lexicon",
+                            searchTags: "Search tags...",
+                            addTag: "Add Tag",
+                            noLexicon: "No lexicon loaded",
+                            noResults: "No matching tags found",
+                            
+                            // Output preview
                             output: "Output:",
-                            connector: "Connector:",
-                            comma: "Comma",
-                            newLine: "New Line",
-                            pipe: "Pipe",
-                            space: "Space",
-                            weightFormat: "Weight Format:",
-                            noFormat: "No Format",
-                            dataManagement: "Data Management:",
-                            exportConfig: "Export Config",
-                            resetDefault: "Reset to Default",
-                            language: "Language:",
-                            resetConfirm: "Reset all settings to default? This cannot be undone.",
+                            
+                            // Success/Error messages
                             importSuccess: "Successfully imported {count} lexicon entries!",
                             entryExists: "This entry already exists!",
                             parseError: "Error parsing lexicon file. Please check the format."
@@ -133,6 +231,19 @@ app.registerExtension({
                     // Create hidden widget to store data
                     const dataWidget = this.addWidget("text", "promptse_data", JSON.stringify(this.promptse_data), (value) => {
                         console.log("PromptSE: Widget value changed:", value);
+                        // When widget value changes, update our internal data
+                        try {
+                            if (value && typeof value === 'string') {
+                                const parsedData = JSON.parse(value);
+                                if (parsedData && parsedData.settings) {
+                                    this.promptse_data = parsedData;
+                                    this.language = parsedData.settings.language || 'zh';
+                                    console.log("PromptSE: Updated internal data from widget:", this.promptse_data.settings);
+                                }
+                            }
+                        } catch (e) {
+                            console.error("PromptSE: Error parsing widget value:", e);
+                        }
                     }, {
                         serialize: true
                     });
@@ -142,15 +253,17 @@ app.registerExtension({
                         dataWidget.computeSize = () => [0, 0];
                     }
                     
-                    // Create main container with flat styling and proper sizing
+                    // Create main container - use full width like skbundle, only leave space for the dot
                     const container = createEl("div", "promptse-container");
                     container.style.cssText = `
-                        position: relative;
-                        top: -25px;
-                        width: 100%;
-                        height: calc(100% + 25px);
-                        min-height: 250px;
+                        position: absolute;
+                        top: -38px;
+                        left: 0;
+                        right: 5px;
+                        bottom: 0;
+                        height: calc(100% + 38px);
                         padding: 6px;
+                        padding-top: 40px;
                         background: #2b2b2b;
                         border: 1px solid #444;
                         border-radius: 4px;
@@ -159,6 +272,7 @@ app.registerExtension({
                         box-sizing: border-box;
                         display: flex;
                         flex-direction: column;
+                        z-index: 1;
                     `;
                     
                     // Create header with flat design
@@ -167,12 +281,13 @@ app.registerExtension({
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        margin-bottom: 6px;
+                        margin-top: -32px;
+                        margin-bottom: 4px;
                         padding-bottom: 4px;
                         border-bottom: 1px solid #444;
                     `;
                     
-                    const title = createEl("span", "", this.getText("title"));
+                    const title = createEl("span", "promptse-title", this.getText("title"));
                     title.style.cssText = `
                         font-weight: 500;
                         font-size: 12px;
@@ -189,14 +304,15 @@ app.registerExtension({
                     // Import lexicon button
                     const importBtn = createEl("button", "", "📁");
                     importBtn.title = this.getText("import");
+                    importBtn.setAttribute('data-action', 'import');
                     importBtn.style.cssText = `
-                        padding: 4px 8px;
+                        padding: 2px 6px;
                         background: #444;
                         color: #ccc;
                         border: 1px solid #666;
                         border-radius: 2px;
                         cursor: pointer;
-                        font-size: 12px;
+                        font-size: 11px;
                     `;
                     importBtn.onclick = () => {
                         this.importLexicon();
@@ -205,14 +321,15 @@ app.registerExtension({
                     // Settings button
                     const settingsBtn = createEl("button", "", "⚙️");
                     settingsBtn.title = this.getText("settings");
+                    settingsBtn.setAttribute('data-action', 'settings');
                     settingsBtn.style.cssText = `
-                        padding: 4px 8px;
+                        padding: 2px 6px;
                         background: #444;
                         color: #ccc;
                         border: 1px solid #666;
                         border-radius: 2px;
                         cursor: pointer;
-                        font-size: 12px;
+                        font-size: 11px;
                     `;
                     settingsBtn.onclick = () => {
                         this.openSettingsPanel();
@@ -229,6 +346,7 @@ app.registerExtension({
                         margin-bottom: 6px;
                         flex: 1;
                         min-height: 100px;
+                        max-height: calc(100% - 80px);
                         overflow-y: auto;
                         border: 1px solid #444;
                         border-radius: 2px;
@@ -307,13 +425,20 @@ app.registerExtension({
                     // Function to render entries with modern cards
                     this.renderPromptseEntries = () => {
                         entriesList.innerHTML = "";
+                        
+                        // Update entries list height based on output preview setting
+                        const entriesListEl = document.querySelector('.promptse-entries');
+                        if (entriesListEl) {
+                            entriesListEl.style.minHeight = this.promptse_data.settings.showOutputPreview ? '100px' : '140px';
+                        }
+                        
                         this.promptse_data.entries.forEach((entry, index) => {
                             const entryCard = createEl("div", "promptse-entry");
                             entryCard.style.cssText = `
                                 display: flex;
                                 flex-direction: column;
-                                padding: 8px;
-                                margin-bottom: 4px;
+                                padding: 6px;
+                                margin-bottom: 3px;
                                 background: ${entry.enabled ? '#3a3a3a' : '#2a2a2a'};
                                 border: 1px solid ${entry.enabled ? '#555' : '#444'};
                                 border-radius: 2px;
@@ -333,7 +458,7 @@ app.registerExtension({
                             headerRow.style.cssText = `
                                 display: flex;
                                 align-items: center;
-                                margin-bottom: 8px;
+                                margin-bottom: 4px;
                             `;
                             
                             // Drag handle
@@ -347,7 +472,7 @@ app.registerExtension({
                                 text-align: center;
                                 user-select: none;
                             `;
-                            dragHandle.title = "Drag to reorder";
+                            dragHandle.title = this.getText("dragToReorder");
                             
                             // Checkbox
                             const checkbox = createEl("input");
@@ -448,8 +573,13 @@ app.registerExtension({
                             entriesList.appendChild(entryCard);
                         });
                         
-                        // Update output preview
+                        // Always update output preview (it will be hidden if disabled)
                         this.updateOutputPreview();
+                        
+                        // Update output section visibility
+                        if (this.outputSection) {
+                            this.outputSection.style.display = this.promptse_data.settings.showOutputPreview ? 'block' : 'none';
+                        }
                     };
                     
                     // Function to format content with weight
@@ -500,8 +630,11 @@ app.registerExtension({
                         
                         const outputText = finalParts.join(connector);
                         if (this.outputPreview) {
-                            this.outputPreview.textContent = outputText || "(no output)";
+                            this.outputPreview.textContent = outputText || "(empty)";
                         }
+                        
+                        // Debug log to see what connector is being used
+                        console.log("PromptSE: Output generated with connector:", JSON.stringify(connector), "weight format:", this.promptse_data.settings.weightFormat);
                         
                         return outputText;
                     };
@@ -552,7 +685,7 @@ app.registerExtension({
                             cursor: move;
                         `;
                         
-                        const title = createEl("span", "", "Edit Entry");
+                        const title = createEl("span", "", this.getText("editEntry"));
                         title.style.cssText = `
                             color: #ccc;
                             font-weight: 500;
@@ -574,7 +707,7 @@ app.registerExtension({
                         header.appendChild(closeBtn);
                         
                         // Title input
-                        const titleLabel = createEl("label", "", "Title:");
+                        const titleLabel = createEl("label", "", this.getText("title_label"));
                         titleLabel.style.cssText = `
                             display: block;
                             color: #aaa;
@@ -597,7 +730,7 @@ app.registerExtension({
                         `;
                         
                         // Content input
-                        const contentLabel = createEl("label", "", "Content:");
+                        const contentLabel = createEl("label", "", this.getText("content_label"));
                         contentLabel.style.cssText = `
                             display: block;
                             color: #aaa;
@@ -622,7 +755,7 @@ app.registerExtension({
                         `;
                         
                         // Weight input
-                        const weightLabel = createEl("label", "", "Weight:");
+                        const weightLabel = createEl("label", "", this.getText("weight_label"));
                         weightLabel.style.cssText = `
                             display: block;
                             color: #aaa;
@@ -664,7 +797,7 @@ app.registerExtension({
                             align-items: center;
                         `;
                         
-                        const lexiconTitle = createEl("span", "", "Lexicon");
+                        const lexiconTitle = createEl("span", "", this.getText("lexicon"));
                         lexiconTitle.style.cssText = `
                             color: #aaa;
                             font-size: 12px;
@@ -673,7 +806,7 @@ app.registerExtension({
                         
                         const searchInput = createEl("input", "", "");
                         searchInput.type = "text";
-                        searchInput.placeholder = "Search tags...";
+                        searchInput.placeholder = this.getText("searchTags");
                         searchInput.style.cssText = `
                             flex: 2;
                             padding: 4px 8px;
@@ -699,7 +832,7 @@ app.registerExtension({
                             lexiconList.innerHTML = "";
                             
                             if (results.length === 0) {
-                                const noResults = createEl("div", "", query ? "No matching tags found" : "No lexicon loaded");
+                                const noResults = createEl("div", "", query ? this.getText("noResults") : this.getText("noLexicon"));
                                 noResults.style.cssText = `
                                     padding: 8px;
                                     color: #666;
@@ -761,87 +894,6 @@ app.registerExtension({
                         lexiconSection.appendChild(lexiconHeader);
                         lexiconSection.appendChild(lexiconList);
                         
-                        // Add new lexicon entry section
-                        const newEntrySection = createEl("div", "", "");
-                        newEntrySection.style.cssText = `
-                            padding: 8px;
-                            border-top: 1px solid #444;
-                            display: flex;
-                            gap: 4px;
-                            align-items: center;
-                        `;
-                        
-                        const newEnglishInput = createEl("input", "", "");
-                        newEnglishInput.type = "text";
-                        newEnglishInput.placeholder = "English";
-                        newEnglishInput.style.cssText = `
-                            flex: 1;
-                            padding: 4px 6px;
-                            background: #2a2a2a;
-                            border: 1px solid #555;
-                            border-radius: 2px;
-                            color: #ccc;
-                            font-size: 10px;
-                        `;
-                        
-                        const newChineseInput = createEl("input", "", "");
-                        newChineseInput.type = "text";
-                        newChineseInput.placeholder = "中文";
-                        newChineseInput.style.cssText = `
-                            flex: 1;
-                            padding: 4px 6px;
-                            background: #2a2a2a;
-                            border: 1px solid #555;
-                            border-radius: 2px;
-                            color: #ccc;
-                            font-size: 10px;
-                        `;
-                        
-                        const addEntryBtn = createEl("button", "", "+");
-                        addEntryBtn.style.cssText = `
-                            padding: 4px 8px;
-                            background: #444;
-                            color: #ccc;
-                            border: 1px solid #666;
-                            border-radius: 2px;
-                            cursor: pointer;
-                            font-size: 10px;
-                        `;
-                        
-                        addEntryBtn.onclick = () => {
-                            const english = newEnglishInput.value.trim();
-                            const chinese = newChineseInput.value.trim();
-                            
-                            if (english && chinese) {
-                                const existingIndex = this.promptse_data.lexicon.findIndex(
-                                    item => item.english.toLowerCase() === english.toLowerCase()
-                                );
-                                
-                                if (existingIndex === -1) {
-                                    this.promptse_data.lexicon.push({
-                                        id: "lex_" + Date.now(),
-                                        english: english,
-                                        chinese: chinese,
-                                        category: "custom",
-                                        tags: [english.toLowerCase(), chinese.toLowerCase()]
-                                    });
-                                    
-                                    newEnglishInput.value = "";
-                                    newChineseInput.value = "";
-                                    renderLexicon(searchInput.value);
-                                    this.triggerSlotChanged();
-                                } else {
-                                    alert("This entry already exists!");
-                                }
-                            }
-                        };
-                        
-                        newEntrySection.appendChild(newEnglishInput);
-                        newEntrySection.appendChild(newChineseInput);
-                        newEntrySection.appendChild(addEntryBtn);
-                        
-                        lexiconSection.appendChild(newEntrySection);
-                        
                         // Initial render of lexicon
                         renderLexicon();
                         
@@ -853,7 +905,7 @@ app.registerExtension({
                             justify-content: flex-end;
                         `;
                         
-                        const saveBtn = createEl("button", "", "Save");
+                        const saveBtn = createEl("button", "", this.getText("save"));
                         saveBtn.style.cssText = `
                             padding: 8px 16px;
                             background: #444;
@@ -864,7 +916,7 @@ app.registerExtension({
                             font-size: 12px;
                         `;
                         
-                        const cancelBtn = createEl("button", "", "Cancel");
+                        const cancelBtn = createEl("button", "", this.getText("cancel"));
                         cancelBtn.style.cssText = `
                             padding: 8px 16px;
                             background: #333;
@@ -958,7 +1010,7 @@ app.registerExtension({
                                     this.parseLexiconFile(event.target.result);
                                 } catch (error) {
                                     console.error("PromptSE: Error parsing lexicon file:", error);
-                                    alert("Error parsing lexicon file. Please check the format.");
+                                    alert(this.getText("parseError"));
                                 }
                             };
                             reader.readAsText(file, 'UTF-8');
@@ -1004,7 +1056,7 @@ app.registerExtension({
                         
                         console.log(`PromptSE: Imported ${imported} lexicon entries`);
                         this.triggerSlotChanged();
-                        alert(`Successfully imported ${imported} lexicon entries!`);
+                        alert(this.getText("importSuccess", { count: imported }));
                     };
                     
                     // Function to search lexicon
@@ -1038,7 +1090,7 @@ app.registerExtension({
                         this.triggerSlotChanged();
                     };
                     
-                    // Function to open settings panel
+                    // Function to open settings panel - COMPLETE WITH ALL FIXES
                     this.openSettingsPanel = () => {
                         // Check if settings modal already exists
                         if (document.getElementById('promptse-settings-modal')) {
@@ -1066,7 +1118,7 @@ app.registerExtension({
                             border: 1px solid #555;
                             border-radius: 4px;
                             width: 450px;
-                            min-height: 350px;
+                            min-height: 400px;
                             padding: 16px;
                             position: relative;
                         `;
@@ -1081,7 +1133,7 @@ app.registerExtension({
                             border-bottom: 1px solid #444;
                         `;
                         
-                        const title = createEl("span", "", "Settings");
+                        const title = createEl("span", "", this.getText("settingsTitle"));
                         title.style.cssText = `
                             color: #ccc;
                             font-weight: 500;
@@ -1103,11 +1155,11 @@ app.registerExtension({
                         header.appendChild(title);
                         header.appendChild(closeBtn);
                         
-                        // Connector setting
+                        // Connector setting with FIX for saved state
                         const connectorSection = createEl("div", "", "");
                         connectorSection.style.cssText = `margin-bottom: 16px;`;
                         
-                        const connectorLabel = createEl("label", "", "Connector:");
+                        const connectorLabel = createEl("label", "", this.getText("connector"));
                         connectorLabel.style.cssText = `
                             display: block;
                             color: #aaa;
@@ -1123,18 +1175,21 @@ app.registerExtension({
                         `;
                         
                         const connectorChoices = [
-                            { value: ", ", label: "Comma" },
-                            { value: "\\n", label: "New Line" },
-                            { value: " | ", label: "Pipe" },
-                            { value: " ", label: "Space" }
+                            { value: ", ", label: this.getText("comma") },
+                            { value: "\n", label: this.getText("newLine") },
+                            { value: " | ", label: this.getText("pipe") },
+                            { value: " ", label: this.getText("space") }
                         ];
+                        
+                        const currentConnector = this.promptse_data.settings.connector;
                         
                         connectorChoices.forEach(choice => {
                             const radio = createEl("input", "", "");
                             radio.type = "radio";
                             radio.name = "connector";
                             radio.value = choice.value;
-                            radio.checked = this.promptse_data.settings.connector === choice.value;
+                            // FIX: Properly check saved state
+                            radio.checked = currentConnector === choice.value;
                             radio.id = "conn_" + choice.value.replace(/[^a-zA-Z]/g, "");
                             
                             const label = createEl("label", "", choice.label);
@@ -1158,7 +1213,7 @@ app.registerExtension({
                         const weightSection = createEl("div", "", "");
                         weightSection.style.cssText = `margin-bottom: 16px;`;
                         
-                        const weightLabel = createEl("label", "", "Weight Format:");
+                        const weightLabel = createEl("label", "", this.getText("weightFormat"));
                         weightLabel.style.cssText = `
                             display: block;
                             color: #aaa;
@@ -1174,9 +1229,9 @@ app.registerExtension({
                         `;
                         
                         const weightChoices = [
-                            { value: "parentheses", label: "(text:1.2)" },
-                            { value: "brackets", label: "[text:1.2]" },
-                            { value: "none", label: "No Format" }
+                            { value: "parentheses", label: this.getText("parentheses") },
+                            { value: "brackets", label: this.getText("brackets") },
+                            { value: "none", label: this.getText("noFormat") }
                         ];
                         
                         weightChoices.forEach(choice => {
@@ -1204,7 +1259,44 @@ app.registerExtension({
                         weightSection.appendChild(weightLabel);
                         weightSection.appendChild(weightOptions);
                         
-                        // Language setting
+                        // Display options setting (NEW - for output preview)
+                        const displaySection = createEl("div", "", "");
+                        displaySection.style.cssText = `margin-bottom: 16px;`;
+                        
+                        const displayLabel = createEl("label", "", this.getText("displayOptions"));
+                        displayLabel.style.cssText = `
+                            display: block;
+                            color: #aaa;
+                            font-size: 12px;
+                            margin-bottom: 6px;
+                        `;
+                        
+                        const showPreviewContainer = createEl("div", "", "");
+                        showPreviewContainer.style.cssText = `
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                        `;
+                        
+                        const showPreviewCheckbox = createEl("input", "", "");
+                        showPreviewCheckbox.type = "checkbox";
+                        showPreviewCheckbox.id = "showOutputPreview";
+                        showPreviewCheckbox.checked = this.promptse_data.settings.showOutputPreview;
+                        
+                        const showPreviewLabel = createEl("label", "", this.getText("showOutputPreview"));
+                        showPreviewLabel.htmlFor = "showOutputPreview";
+                        showPreviewLabel.style.cssText = `
+                            color: #ccc;
+                            font-size: 11px;
+                            cursor: pointer;
+                        `;
+                        
+                        showPreviewContainer.appendChild(showPreviewCheckbox);
+                        showPreviewContainer.appendChild(showPreviewLabel);
+                        displaySection.appendChild(displayLabel);
+                        displaySection.appendChild(showPreviewContainer);
+                        
+                        // Language setting with FIX for immediate refresh
                         const languageSection = createEl("div", "", "");
                         languageSection.style.cssText = `margin-bottom: 16px;`;
                         
@@ -1223,8 +1315,8 @@ app.registerExtension({
                         `;
                         
                         const languageChoices = [
-                            { value: "zh", label: "中文" },
-                            { value: "en", label: "English" }
+                            { value: "zh", label: this.getText("chinese") },
+                            { value: "en", label: this.getText("english") }
                         ];
                         
                         languageChoices.forEach(choice => {
@@ -1270,7 +1362,7 @@ app.registerExtension({
                             flex-wrap: wrap;
                         `;
                         
-                        const exportBtn = createEl("button", "", "Export Config");
+                        const exportBtn = createEl("button", "", this.getText("exportConfig"));
                         exportBtn.style.cssText = `
                             padding: 6px 12px;
                             background: #444;
@@ -1284,7 +1376,7 @@ app.registerExtension({
                             this.exportConfig();
                         };
                         
-                        const resetBtn = createEl("button", "", "Reset to Default");
+                        const resetBtn = createEl("button", "", this.getText("resetDefault"));
                         resetBtn.style.cssText = `
                             padding: 6px 12px;
                             background: #444;
@@ -1295,7 +1387,7 @@ app.registerExtension({
                             font-size: 11px;
                         `;
                         resetBtn.onclick = () => {
-                            if (confirm("Reset all settings to default? This cannot be undone.")) {
+                            if (confirm(this.getText("resetConfirm"))) {
                                 this.resetToDefault();
                                 closeModal();
                             }
@@ -1315,7 +1407,7 @@ app.registerExtension({
                             margin-top: 20px;
                         `;
                         
-                        const cancelBtn = createEl("button", "", "Cancel");
+                        const cancelBtn = createEl("button", "", this.getText("cancel"));
                         cancelBtn.style.cssText = `
                             padding: 8px 16px;
                             background: #333;
@@ -1326,7 +1418,7 @@ app.registerExtension({
                             font-size: 12px;
                         `;
                         
-                        const saveBtn = createEl("button", "", "Save");
+                        const saveBtn = createEl("button", "", this.getText("save"));
                         saveBtn.style.cssText = `
                             padding: 8px 16px;
                             background: #444;
@@ -1343,6 +1435,7 @@ app.registerExtension({
                         modalContent.appendChild(header);
                         modalContent.appendChild(connectorSection);
                         modalContent.appendChild(weightSection);
+                        modalContent.appendChild(displaySection);
                         modalContent.appendChild(languageSection);
                         modalContent.appendChild(dataSection);
                         modalContent.appendChild(buttonContainer);
@@ -1364,22 +1457,36 @@ app.registerExtension({
                             }
                         };
                         
+                        // FIX: Save button with immediate UI refresh
                         saveBtn.onclick = () => {
-                            let languageChanged = false;
+                            let needsRefresh = false;
+                            
+                            // Save display preview setting
+                            const showPreview = document.getElementById('showOutputPreview').checked;
+                            if (showPreview !== this.promptse_data.settings.showOutputPreview) {
+                                this.promptse_data.settings.showOutputPreview = showPreview;
+                                // Update output section visibility immediately
+                                if (this.outputSection) {
+                                    this.outputSection.style.display = showPreview ? 'block' : 'none';
+                                }
+                                // Update node size
+                                const minHeight = showPreview ? 280 : 220;
+                                this.size[1] = Math.max(this.size[1], minHeight);
+                                this.onResize?.(this.size);
+                            }
                             
                             // Save language setting
                             const selectedLanguage = document.querySelector('input[name="language"]:checked');
                             if (selectedLanguage && selectedLanguage.value !== this.language) {
                                 this.language = selectedLanguage.value;
-                                languageChanged = true;
+                                this.promptse_data.settings.language = selectedLanguage.value;
+                                needsRefresh = true;
                             }
                             
                             // Save connector setting
                             const selectedConnector = document.querySelector('input[name="connector"]:checked');
                             if (selectedConnector) {
-                                let connectorValue = selectedConnector.value;
-                                if (connectorValue === "\\n") connectorValue = "\n";
-                                this.promptse_data.settings.connector = connectorValue;
+                                this.promptse_data.settings.connector = selectedConnector.value;
                             }
                             
                             // Save weight format setting
@@ -1388,22 +1495,59 @@ app.registerExtension({
                                 this.promptse_data.settings.weightFormat = selectedWeight.value;
                             }
                             
+                            // Log the saved settings for debugging
+                            console.log("PromptSE: Settings saved:", {
+                                connector: this.promptse_data.settings.connector,
+                                weightFormat: this.promptse_data.settings.weightFormat,
+                                showOutputPreview: this.promptse_data.settings.showOutputPreview,
+                                language: this.promptse_data.settings.language
+                            });
+                            
+                            // Always update the output preview after changing settings
                             this.renderPromptseEntries();
                             this.triggerSlotChanged();
                             closeModal();
                             
-                            // If language changed, refresh the entire UI
-                            if (languageChanged) {
-                                this.refreshUILanguage();
+                            // Refresh UI if needed
+                            if (needsRefresh) {
+                                this.refreshUI();
                             }
                         };
+                    };
+                    
+                    // Function to refresh entire UI
+                    this.refreshUI = () => {
+                        // Remove ALL existing containers to prevent duplication
+                        const allContainers = document.querySelectorAll('.promptse-container');
+                        allContainers.forEach(container => {
+                            if (container && container.parentNode) {
+                                container.parentNode.removeChild(container);
+                            }
+                        });
+                        
+                        // Also check in the node's DOM element
+                        if (this.domElement) {
+                            const nodeContainers = this.domElement.querySelectorAll('.promptse-container');
+                            nodeContainers.forEach(container => {
+                                if (container && container.parentNode) {
+                                    container.parentNode.removeChild(container);
+                                }
+                            });
+                        }
+                        
+                        // Reset initialized flag to rebuild UI
+                        this.promptse_initialized = false;
+                        
+                        // Rebuild the entire UI
+                        this.onNodeCreated();
                     };
                     
                     // Function to export config
                     this.exportConfig = () => {
                         const config = {
                             settings: this.promptse_data.settings,
-                            lexicon: this.promptse_data.lexicon
+                            lexicon: this.promptse_data.lexicon,
+                            entries: this.promptse_data.entries
                         };
                         
                         const blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
@@ -1419,59 +1563,24 @@ app.registerExtension({
                     
                     // Function to reset to default
                     this.resetToDefault = () => {
-                        this.promptse_data.settings = {
-                            connector: ", ",
-                            mode: "M",
-                            weightFormat: "parentheses"
+                        this.promptse_data = {
+                            entries: [
+                                { id: "entry1", title: "角色", content: "beautiful girl, long hair", enabled: true, weight: 1.0 },
+                                { id: "entry2", title: "风格", content: "anime style, high quality", enabled: true, weight: 1.2 },
+                                { id: "entry3", title: "细节", content: "detailed, masterpiece", enabled: false, weight: 1.0 }
+                            ],
+                            settings: {
+                                connector: ", ",
+                                mode: "M",
+                                weightFormat: "parentheses",
+                                showOutputPreview: false,
+                                language: "zh"
+                            },
+                            lexicon: []
                         };
-                        this.promptse_data.lexicon = [];
-                        this.renderPromptseEntries();
+                        this.language = "zh";
+                        this.refreshUI();
                         this.triggerSlotChanged();
-                    };
-                    
-                    // Function to refresh UI language
-                    this.refreshUILanguage = () => {
-                        // Update header title
-                        const headerTitle = document.querySelector('.promptse-container .promptse-header span');
-                        if (headerTitle) {
-                            headerTitle.textContent = this.getText("title");
-                        }
-                        
-                        // Update toolbar button titles
-                        const importBtn = document.querySelector('.promptse-container button[title]');
-                        if (importBtn && importBtn.textContent === '📁') {
-                            importBtn.title = this.getText("import");
-                        }
-                        
-                        const settingsBtn = document.querySelector('.promptse-container button[title="Settings"], .promptse-container button[title="设置"]');
-                        if (settingsBtn && settingsBtn.textContent === '⚙️') {
-                            settingsBtn.title = this.getText("settings");
-                        }
-                        
-                        // Update control buttons text
-                        const addBtn = document.querySelector('.promptse-container .promptse-controls button');
-                        if (addBtn) {
-                            addBtn.textContent = "+ " + this.getText("add");
-                        }
-                        
-                        const removeBtn = document.querySelector('.promptse-container .promptse-controls button:nth-child(2)');
-                        if (removeBtn) {
-                            removeBtn.textContent = this.getText("remove");
-                        }
-                        
-                        const modeBtn = document.querySelector('.promptse-container .promptse-controls button:last-child');
-                        if (modeBtn) {
-                            const currentMode = this.promptse_data.settings.mode;
-                            modeBtn.textContent = this.getText("mode") + ": " + currentMode;
-                        }
-                        
-                        // Update output preview label
-                        const outputLabel = document.querySelector('.promptse-output div:first-child');
-                        if (outputLabel) {
-                            outputLabel.textContent = this.getText("output");
-                        }
-                        
-                        console.log("PromptSE: UI language refreshed to", this.language);
                     };
                     
                     // Function to edit entry
@@ -1481,14 +1590,16 @@ app.registerExtension({
                         this.createModalEditor(entry, index);
                     };
                     
-                    // Create output preview
-                    const outputSection = createEl("div", "promptse-output");
-                    outputSection.style.cssText = `
-                        margin-bottom: 6px;
-                        padding: 6px;
+                    // Create output preview container (will be shown/hidden based on settings)
+                    let outputSection = null;
+                    this.outputSection = createEl("div", "promptse-output");
+                    this.outputSection.style.cssText = `
+                        margin-bottom: 4px;
+                        padding: 4px;
                         background: #2a2a2a;
                         border: 1px solid #444;
                         border-radius: 2px;
+                        display: ${this.promptse_data.settings.showOutputPreview ? 'block' : 'none'};
                     `;
                     
                     const outputLabel = createEl("div", "", this.getText("output"));
@@ -1508,42 +1619,45 @@ app.registerExtension({
                         min-height: 16px;
                     `;
                     
-                    outputSection.appendChild(outputLabel);
-                    outputSection.appendChild(this.outputPreview);
+                    this.outputSection.appendChild(outputLabel);
+                    this.outputSection.appendChild(this.outputPreview);
+                    outputSection = this.outputSection;
                     
                     // Create controls with modern styling
                     const controls = createEl("div", "promptse-controls");
                     controls.style.cssText = `
                         display: flex;
-                        gap: 8px;
+                        gap: 6px;
                         align-items: center;
                         justify-content: space-between;
+                        margin-top: auto;
                     `;
                     
                     const leftControls = createEl("div");
                     leftControls.style.cssText = `
                         display: flex;
-                        gap: 8px;
+                        gap: 4px;
                         align-items: center;
                     `;
                     
                     const rightControls = createEl("div");
                     rightControls.style.cssText = `
                         display: flex;
-                        gap: 8px;
+                        gap: 4px;
                         align-items: center;
                     `;
                     
                     // Add button
                     const addBtn = createEl("button", "", "+ " + this.getText("add"));
+                    addBtn.setAttribute('data-action', 'add');
                     addBtn.style.cssText = `
-                        padding: 6px 10px;
+                        padding: 4px 8px;
                         background: #444;
                         color: #ccc;
                         border: 1px solid #666;
                         border-radius: 2px;
                         cursor: pointer;
-                        font-size: 11px;
+                        font-size: 10px;
                         font-weight: 400;
                     `;
                     addBtn.onmouseenter = () => {
@@ -1556,7 +1670,7 @@ app.registerExtension({
                         console.log("PromptSE: Adding new entry");
                         this.promptse_data.entries.push({
                             id: "entry" + Date.now(),
-                            title: "New Prompt",
+                            title: "新条目",
                             content: "",
                             enabled: true,
                             weight: 1.0
@@ -1567,14 +1681,15 @@ app.registerExtension({
                     
                     // Remove button
                     const removeBtn = createEl("button", "", this.getText("remove"));
+                    removeBtn.setAttribute('data-action', 'remove');
                     removeBtn.style.cssText = `
-                        padding: 6px 10px;
+                        padding: 4px 8px;
                         background: #444;
                         color: #ccc;
                         border: 1px solid #666;
                         border-radius: 2px;
                         cursor: pointer;
-                        font-size: 11px;
+                        font-size: 10px;
                         font-weight: 400;
                     `;
                     removeBtn.onmouseenter = () => {
@@ -1593,16 +1708,19 @@ app.registerExtension({
                         }
                     };
                     
-                    // Mode toggle
-                    const modeBtn = createEl("button", "", this.getText("mode") + ": " + this.promptse_data.settings.mode);
+                    // Mode toggle with better text - FIX for intuitive mode display
+                    const modeText = this.promptse_data.settings.mode === "M" ?
+                        this.getText("multiMode") : this.getText("singleMode");
+                    const modeBtn = createEl("button", "mode-button", modeText);
+                    modeBtn.title = this.getText("modeTooltip");
                     modeBtn.style.cssText = `
-                        padding: 6px 10px;
+                        padding: 4px 8px;
                         background: #444;
                         color: #ccc;
                         border: 1px solid #666;
                         border-radius: 2px;
                         cursor: pointer;
-                        font-size: 11px;
+                        font-size: 10px;
                         font-weight: 400;
                     `;
                     modeBtn.onmouseenter = () => {
@@ -1615,7 +1733,8 @@ app.registerExtension({
                         console.log("PromptSE: Mode button clicked, current mode:", this.promptse_data.settings.mode);
                         const newMode = this.promptse_data.settings.mode === "M" ? "S" : "M";
                         this.promptse_data.settings.mode = newMode;
-                        modeBtn.textContent = this.getText("mode") + ": " + newMode;
+                        modeBtn.textContent = newMode === "M" ?
+                            this.getText("multiMode") : this.getText("singleMode");
                         
                         // When switching to Single mode, disable all entries
                         if (newMode === "S") {
@@ -1639,10 +1758,19 @@ app.registerExtension({
                     // Assemble the UI
                     container.appendChild(header);
                     container.appendChild(entriesList);
-                    container.appendChild(outputSection);
+                    container.appendChild(outputSection); // Always add it, control visibility with display property
                     container.appendChild(controls);
                     
-                    // Clear any existing widgets with the same name
+                    // Clear any existing widgets with the same name and remove old containers
+                    const existingContainers = this.domElement?.querySelectorAll('.promptse-container');
+                    if (existingContainers) {
+                        existingContainers.forEach(c => {
+                            if (c !== container && c.parentNode) {
+                                c.parentNode.removeChild(c);
+                            }
+                        });
+                    }
+                    
                     if (this.widgets) {
                         this.widgets = this.widgets.filter(w => w.name !== "promptse_ui");
                     }
@@ -1654,13 +1782,13 @@ app.registerExtension({
                     });
                     
                     // Set minimum node size
-                    this.size = [Math.max(this.size[0] || 0, 300), Math.max(this.size[1] || 0, 250)];
+                    this.size = [Math.max(this.size[0] || 0, 300), Math.max(this.size[1] || 0, 220)];
                     
                     // Override onResize to maintain minimum size
                     const origOnResize = this.onResize;
                     this.onResize = function(size) {
                         size[0] = Math.max(size[0], 300);
-                        size[1] = Math.max(size[1], 250);
+                        size[1] = Math.max(size[1], 220);
                         this.size = size;
                         if (origOnResize) {
                             origOnResize.call(this, size);
@@ -1671,11 +1799,13 @@ app.registerExtension({
                     this.triggerSlotChanged = () => {
                         console.log("PromptSE: Triggering slot changed with data:", this.promptse_data);
                         
-                        // Update the hidden widget value
+                        // Update the hidden widget value with current data
                         const dataWidget = this.widgets?.find(w => w.name === "promptse_data");
                         if (dataWidget) {
-                            dataWidget.value = JSON.stringify(this.promptse_data);
-                            console.log("PromptSE: Updated widget value:", dataWidget.value);
+                            // Ensure we're saving the complete current state
+                            const dataToSave = JSON.stringify(this.promptse_data);
+                            dataWidget.value = dataToSave;
+                            console.log("PromptSE: Updated widget value with settings:", this.promptse_data.settings);
                         } else {
                             console.warn("PromptSE: Data widget not found!");
                         }
@@ -1719,6 +1849,29 @@ app.registerExtension({
                 
                 if (obj.promptse_data) {
                     this.promptse_data = obj.promptse_data;
+                    // Ensure new settings are present
+                    if (!this.promptse_data.settings) {
+                        this.promptse_data.settings = {};
+                    }
+                    if (!this.promptse_data.settings.hasOwnProperty('showOutputPreview')) {
+                        this.promptse_data.settings.showOutputPreview = false;
+                    }
+                    if (!this.promptse_data.settings.hasOwnProperty('language')) {
+                        this.promptse_data.settings.language = 'zh';
+                    }
+                    if (!this.promptse_data.settings.hasOwnProperty('connector')) {
+                        this.promptse_data.settings.connector = ', ';
+                    }
+                    if (!this.promptse_data.settings.hasOwnProperty('mode')) {
+                        this.promptse_data.settings.mode = 'M';
+                    }
+                    if (!this.promptse_data.settings.hasOwnProperty('weightFormat')) {
+                        this.promptse_data.settings.weightFormat = 'parentheses';
+                    }
+                    
+                    // Always use the saved language
+                    this.language = this.promptse_data.settings.language;
+                    
                     console.log("PromptSE: Loaded data from serialization:", this.promptse_data);
                     
                     // Update widget if it exists
